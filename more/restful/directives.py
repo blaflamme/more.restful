@@ -1,7 +1,13 @@
 from dectate import Composite
 from morepath.directive import JsonAction
 
-from .abc import Resource
+from .abc import (
+    Resource,
+    ViewableResource,
+    CollectionResource,
+    EditableResource,
+    DeletableResource
+)
 from .views import (
     resource_head_view,
     resource_options_view,
@@ -13,16 +19,16 @@ from .views import (
 )
 
 
-def resource_view_handler(view, resource):
+def resource_view_handler(view, resource, smart=True):
 
     def handle_resource(obj, request):
         inst = resource(obj, request)
-        return view(obj, request, inst)
+        return view(obj, request, inst, smart)
 
     return handle_resource
 
 
-def resource_composite_action(method, obj, model, permission):
+def resource_composite_action(method, obj, model, permission, smart=True):
     views = {
         'HEAD': resource_head_view,
         'OPTIONS': resource_options_view,
@@ -32,7 +38,7 @@ def resource_composite_action(method, obj, model, permission):
         'PATCH': resource_patch_view,
         'DELETE': resource_delete_view
     }
-    view = resource_view_handler(views.get(method), obj)
+    view = resource_view_handler(views.get(method), obj, smart)
     action = JsonAction(
         model,
         permission=permission,
@@ -46,16 +52,22 @@ class ResourceAction(Composite):
     def __init__(
         self,
         model,
-        permission=None
+        view_permission=None,
+        edit_permission=None,
+        add_permission=None,
+        delete_permission=None
         ):
         self.model = model
-        self.permission = permission
+        self.view_permission = view_permission
+        self.edit_permission = edit_permission
+        self.add_permission = add_permission
+        self.delete_permission = delete_permission
 
     def actions(self, obj):
         views = []
         for method, permission in [
-            ('HEAD', self.permission),
-            ('OPTIONS', self.permission)
+            ('HEAD', self.view_permission),
+            ('OPTIONS', self.view_permission)
             ]:
             views.append(
                 resource_composite_action(
@@ -66,20 +78,22 @@ class ResourceAction(Composite):
                 )
             )
         if issubclass(obj, Resource):
-            for method, permission in [
-                ('GET', self.permission),
-                ('POST', self.permission),
-                ('PUT', self.permission),
-                ('PATCH', self.permission),
-                ('DELETE', self.permission)
+            for method, klass, permission in [
+                ('GET', ViewableResource, self.view_permission),
+                ('POST', CollectionResource, self.add_permission),
+                ('PUT', EditableResource, self.edit_permission),
+                ('PATCH', EditableResource, self.edit_permission),
+                ('DELETE', DeletableResource, self.delete_permission)
                 ]:
-                if hasattr(obj, method.lower()):
+                smart = True if issubclass(obj, klass) else False
+                if (smart) or (not smart and hasattr(obj, method.lower())):
                     views.append(
                         resource_composite_action(
                             method,
                             obj,
                             self.model,
-                            permission
+                            permission,
+                            smart=smart
                         )
                     )
         return views
