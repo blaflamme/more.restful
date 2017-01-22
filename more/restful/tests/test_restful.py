@@ -2,10 +2,6 @@ from webtest import TestApp as Client
 
 from more.restful.abc import Resource
 from more.restful import RestfulApp
-from more.restful.tests.fixtures.base import (
-    TestApp as App,
-    TestModel as Model
-)
 
 
 def test_default_resource_methods():
