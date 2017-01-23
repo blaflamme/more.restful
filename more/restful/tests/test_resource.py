@@ -140,6 +140,8 @@ def test_editable_resource():
     class Default(Resource, EditableResource):
 
         def validate(self, data, partial):
+            if partial:
+                data = self.complete_data(data)
             return data
 
         def update_data(self, data, replace):
