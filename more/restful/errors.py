@@ -31,9 +31,6 @@ def http_exception_view(self, request):
         return self
     error = {'code': self.status_int}
 
-    print(self)
-    print(self.__dict__)
-
     if hasattr(self, 'detail') and self.detail is not None:
         error['message'] = self.detail
     elif hasattr(self, 'message'):
