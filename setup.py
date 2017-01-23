@@ -19,7 +19,8 @@ long_description = '\n'.join((
     ))
 
 install_requires = [
-    'morepath'
+    'morepath',
+    'boltons'
     ]
 
 tests_require = [

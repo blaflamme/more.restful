@@ -1,5 +1,7 @@
 import abc
 
+from .utils import remerge
+
 
 class Resource(abc.ABC):
 
@@ -26,8 +28,7 @@ class EditableResource(abc.ABC):
         raise NotImplemented()
 
     def complete_data(self, data):
-        # TODO merge data here
-        return self.asdict()
+        return remerge([self.asdict(), data])
 
     @abc.abstractmethod
     def asdict(self):
