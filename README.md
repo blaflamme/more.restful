@@ -27,6 +27,6 @@ class RootResource(Resource):
 @App.resource(model=Data)
 class DataResource(Resource, ViewableResource):
 
-    def render(self):
+    def asdict(self):
         return self.obj
 ```
