@@ -21,7 +21,8 @@ long_description = '\n'.join((
 install_requires = [
     'morepath',
     'boltons',
-    'colander'
+    'colander',
+    'marshmallow'
     ]
 
 tests_require = [
