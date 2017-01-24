@@ -47,7 +47,7 @@ The flow is:
 
 If your resource derives from `more.restful.abc.Resource` and one or more of the `default` resources like `more.restful.abc.ViewableResource`, then default views are provided, HTTP statuses and headers are set and another flow is used to help reduce boilerplate code like validation and data update.
 
-As an example, for `more.restful.abc.ViewableResource` just implements the `asdict` method and you automatically get a `GET` view registered which returns the data returned by that method
+As an example, for `more.restful.abc.ViewableResource` just implements the `asdict()` method and you automatically get a `GET` view registered which returns the data returned by that method
 
 ```python
 from more.restful import RestfulApp
