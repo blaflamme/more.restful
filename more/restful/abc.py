@@ -43,8 +43,8 @@ class DeletableResource(abc.ABC):
 
 
 class CollectionResource(abc.ABC):
-    def validate_resource(self, data):
+    def validate(self, data):
         raise NotImplemented()  # pragma: no cover
 
-    def add_resource(self, data):
+    def add(self, data):
         raise NotImplemented()  # pragma: no cover

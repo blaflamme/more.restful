@@ -205,10 +205,10 @@ def test_collection_resource():
                 'name': self.obj.name
             }
 
-        def validate_resource(self, data):
+        def validate(self, data):
             pass
 
-        def add_resource(self, data):
+        def add(self, data):
             self.obj.name = data.get('name', 'test')
             return self.asdict()
 

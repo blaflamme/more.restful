@@ -38,12 +38,12 @@ def resource_post_view(obj, request, resource, smart=True):
         data = request.json_body
     except ValueError:
         raise HTTPUnprocessableEntity()
-    resource.validate_resource(data)
+    resource.validate(data)
 
     @request.after
     def _after(response):
         response.status_int = 201
-    return resource.add_resource(data)
+    return resource.add(data)
 
 
 def resource_put_view(obj, request, resource, smart=True):
