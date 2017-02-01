@@ -5,11 +5,11 @@ from webob.exc import (
 )
 
 
-def resource_head_view(obj, request, resource, smart=True):
+def resource_head_view(obj, request, schema, func):
     return HTTPNoContent()
 
 
-def resource_options_view(obj, request, resource, smart=True):
+def resource_options_view(obj, request, schema, func):
     methods = set()
     q = Query('json').filter(model=type(obj))
     for action, res in list(q(request.app)):
@@ -25,53 +25,46 @@ def resource_options_view(obj, request, resource, smart=True):
     return HTTPNoContent()
 
 
-def resource_get_view(obj, request, resource, smart=True):
-    if not smart:
-        return resource.get()
-    return resource.asdict()
+def resource_get_view(obj, request, schema, func):
+    return func(obj, request)
 
 
-def resource_post_view(obj, request, resource, smart=True):
-    if not smart:
-        return resource.post()
+def resource_post_view(obj, request, schema, func):
     try:
         data = request.json_body
     except ValueError:
         raise HTTPUnprocessableEntity()
-    resource.validate(data)
+    # resource.validate(data)
 
     @request.after
     def _after(response):
         response.status_int = 201
-    return resource.add(data)
+
+    return func(obj, request, schema)
 
 
-def resource_put_view(obj, request, resource, smart=True):
-    if not smart:
-        return resource.put()
+def resource_put_view(obj, request, schema, func):
     try:
         data = request.json_body
     except ValueError:
         raise HTTPUnprocessableEntity()
-    resource.validate(data, partial=False)
-    r = resource.update_data(data, replace=True)
-    return r if r is not None else resource.asdict()
+    # resource.validate(data, partial=False)
+    # r = resource.update_data(data, replace=True)
+    # return r if r is not None else resource.asdict()
+    return func(obj, request, schema)
 
 
-def resource_patch_view(obj, request, resource, smart=True):
-    if not smart:
-        return resource.patch()
+def resource_patch_view(obj, request, schema, func):
     try:
         data = request.json_body
     except ValueError:
         raise HTTPUnprocessableEntity()
-    resource.validate(data, partial=True)
-    r = resource.update_data(data, replace=False)
-    return r if r is not None else resource.asdict()
+    # resource.validate(data, partial=True)
+    # r = resource.update_data(data, replace=False)
+    # return r if r is not None else resource.asdict()
+    return func(obj, request, schema)
 
 
-def resource_delete_view(obj, request, resource, smart=True):
-    if not smart:
-        return resource.delete()
-    resource.delete()
+def resource_delete_view(obj, request, schema, func):
+    func(obj, request)
     return HTTPNoContent()
