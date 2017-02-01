@@ -20,20 +20,24 @@ def test_default_resource_methods():
         def __init__(self):
             pass
 
-    @App.resource(model=Model)
-    class Default(Resource):
-        pass
+    with App.resource(model=Model) as resource:
+
+        @resource(defaults=True)
+        def get(self, request):
+            return {}
 
     app = App()
     c = Client(app)
 
-    response = c.head('/')
+    response = c.head('/', status=204)
     assert response.body == b''
 
-    response = c.options('/')
-    assert response.headers['Access-Control-Allow-Methods'] == 'HEAD, OPTIONS'
+    response = c.options('/', status=204)
+    assert response.headers['Access-Control-Allow-Methods'] == 'GET, HEAD, OPTIONS'
 
-    c.get('/', status=405)
+    response = c.get('/', status=200)
+    assert response.json == {}
+
     c.post('/', status=405)
     c.put('/', status=405)
     c.patch('/', status=405)
@@ -50,33 +54,27 @@ def test_resource_all_methods():
         def __init__(self):
             pass
 
-    @App.resource(model=Model)
-    class Default(Resource):
+    with App.resource(model=Model) as resource:
 
-        def get(self):
-            return {
-                'method': 'GET'
-            }
+        @resource(request_method='GET', defaults=True)
+        def get(self, request):
+            return {'foo': 'bar'}
 
-        def post(self):
-            return {
-                'method': 'POST'
-            }
+        @resource(request_method='POST')
+        def post(self, request, schema):
+            return request.json
 
-        def put(self):
-            return {
-                'method': 'PUT'
-            }
+        @resource(request_method='PUT')
+        def put(self, request, schema):
+            return request.json
 
-        def patch(self):
-            return {
-                'method': 'PATCH'
-            }
+        @resource(request_method='PATCH')
+        def patch(self, request, schema):
+            return request.json
 
-        def delete(self):
-            return {
-                'method': 'DELETE'
-            }
+        @resource(request_method='DELETE')
+        def delete(self, request):
+            return {'foo': 'bar'}
 
     app = App()
     c = Client(app)
@@ -85,136 +83,20 @@ def test_resource_all_methods():
     assert response.headers['Access-Control-Allow-Methods'] == \
         'DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT'
 
-    response = c.get('/')
-    assert response.json == {'method': 'GET'}
+    response = c.get('/', status=200)
+    assert response.json == {'foo': 'bar'}
 
-    response = c.post('/')
-    assert response.json == {'method': 'POST'}
+    response = c.post_json('/', {'foo': 'bar'}, status=201)
+    assert response.json == {'foo': 'bar'}
+    c.post_json('/', status=422)
 
-    response = c.put('/')
-    assert response.json == {'method': 'PUT'}
-
-    response = c.patch('/')
-    assert response.json == {'method': 'PATCH'}
-
-    response = c.delete('/')
-    assert response.json == {'method': 'DELETE'}
-
-
-def test_viewable_resource():
-
-    class App(RestfulApp):
-        pass
-
-    @App.path(path='')
-    class Model(object):
-        def __init__(self):
-            self.name = 'test'
-
-    @App.resource(model=Model)
-    class Default(Resource, ViewableResource):
-
-        def asdict(self):
-            return {
-                'name': self.obj.name
-            }
-
-    app = App()
-    c = Client(app)
-
-    response = c.get('/')
-    assert response.json == {'name': 'test'}
-
-
-def test_editable_resource():
-
-    class App(RestfulApp):
-        pass
-
-    @App.path(path='')
-    class Model(object):
-        def __init__(self):
-            self.name = 'test'
-
-    @App.resource(model=Model)
-    class Default(Resource, EditableResource):
-
-        def validate(self, data, partial):
-            if partial:
-                data = self.complete_data(data)
-            return data
-
-        def update_data(self, data, replace):
-            self.name = data.get('name', 'test')
-            return data
-
-        def asdict(self):
-            return {
-                'name': self.obj.name
-            }
-
-    app = App()
-    c = Client(app)
-
-    response = c.put_json('/', {'name': 'test2'})
-    assert response.json == {'name': 'test2'}
+    response = c.put_json('/', {'foo': 'bar'}, status=200)
+    assert response.json == {'foo': 'bar'}
     c.put_json('/', status=422)
 
-    response = c.patch_json('/', {'name': 'test3'})
-    assert response.json == {'name': 'test3'}
+    response = c.patch_json('/', {'foo': 'bar'}, status=200)
+    assert response.json == {'foo': 'bar'}
     c.patch_json('/', status=422)
 
-
-def test_deletable_resource():
-
-    class App(RestfulApp):
-        pass
-
-    @App.path(path='')
-    class Model(object):
-        def __init__(self):
-            pass
-
-    @App.resource(model=Model)
-    class Default(Resource, DeletableResource):
-
-        def delete(self):
-            pass
-
-    app = App()
-    c = Client(app)
-
-    c.delete_json('/', status=204)
-
-
-def test_collection_resource():
-
-    class App(RestfulApp):
-        pass
-
-    @App.path(path='')
-    class Model(object):
-        def __init__(self):
-            self.name = None
-
-    @App.resource(model=Model)
-    class Default(Resource, CollectionResource):
-
-        def asdict(self):
-            return {
-                'name': self.obj.name
-            }
-
-        def validate(self, data):
-            pass
-
-        def add(self, data):
-            self.obj.name = data.get('name', 'test')
-            return self.asdict()
-
-    app = App()
-    c = Client(app)
-
-    response = c.post_json('/', {'name': 'test4'}, status=201)
-    assert response.json == {'name': 'test4'}
-    c.post_json('/', status=422)
+    response = c.delete('/', status=204)
+    assert response.body == b''

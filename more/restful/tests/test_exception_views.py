@@ -18,10 +18,8 @@ def test_generic_error():
         pass
 
     @App.resource(model=Model)
-    class Default(Resource):
-
-        def get(self):
-            raise KeyError('BOOM!')
+    def get(self, request):
+        raise KeyError('BOOM!')
 
     app = App()
     c = Client(app)
@@ -45,10 +43,8 @@ def test_generic_error_with_traceback():
         pass
 
     @App.resource(model=Model)
-    class Default(Resource):
-
-        def get(self):
-            raise KeyError('BOOM!')
+    def get(self, request):
+        raise KeyError('BOOM!')
 
     app = App()
     app.commit()
@@ -70,10 +66,8 @@ def test_http_exception_error():
         pass
 
     @App.resource(model=Model)
-    class Default(Resource):
-
-        def get(self):
-            raise HTTPBadRequest()
+    def get(self, request):
+        raise HTTPBadRequest()
 
     app = App()
     c = Client(app)
@@ -96,10 +90,8 @@ def test_http_not_found_error():
         pass
 
     @App.resource(model=Model)
-    class Default(Resource):
-
-        def get(self):
-            raise HTTPNotFound()
+    def get(self, request):
+        raise HTTPNotFound()
 
     app = App()
     c = Client(app)
@@ -122,10 +114,8 @@ def test_http_custom_message_error():
         pass
 
     @App.resource(model=Model)
-    class Default(Resource):
-
-        def get(self):
-            raise HTTPBadRequest('Custom Error')
+    def get(self, request):
+        raise HTTPBadRequest('Custom Error')
 
     app = App()
     c = Client(app)
@@ -148,10 +138,8 @@ def test_http_custom_json_error():
         pass
 
     @App.resource(model=Model)
-    class Default(Resource):
-
-        def get(self):
-            raise HTTPBadRequest(json={'foo': 'bar'})
+    def get(self, request):
+        raise HTTPBadRequest(json={'foo': 'bar'})
 
     app = App()
     c = Client(app)
