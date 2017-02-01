@@ -1,13 +1,6 @@
 from dectate import Composite
 from morepath.directive import JsonAction
 
-from .abc import (
-    Resource,
-    ViewableResource,
-    CollectionResource,
-    EditableResource,
-    DeletableResource
-)
 from .views import (
     resource_head_view,
     resource_options_view,
@@ -19,81 +12,91 @@ from .views import (
 )
 
 
-def resource_view_handler(view, resource, smart=True):
+def resource_view_handler(view, schema, func):
 
     def handle_resource(obj, request):
-        inst = resource(obj, request)
-        return view(obj, request, inst, smart)
+        return view(obj, request, schema, func)
 
     return handle_resource
 
 
-def resource_composite_action(method, obj, model, permission, smart=True):
+def resource_composite_action(
+    obj,
+    model,
+    schema,
+    permission,
+    internal,
+    **predicates
+    ):
     views = {
         'HEAD': resource_head_view,
         'OPTIONS': resource_options_view,
         'GET': resource_get_view,
-        'POST': resource_post_view,
         'PUT': resource_put_view,
         'PATCH': resource_patch_view,
+        'POST': resource_post_view,
         'DELETE': resource_delete_view
     }
-    view = resource_view_handler(views.get(method), obj, smart)
+    method = predicates['request_method']
+    view = resource_view_handler(views.get(method), schema, obj)
     action = JsonAction(
         model,
         permission=permission,
-        request_method=method
+        internal=internal,
+        **predicates
     )
     return (action, view)
 
 
 class ResourceAction(Composite):
 
+    query_classes = [JsonAction]
+
     def __init__(
         self,
         model,
-        view_permission=None,
-        edit_permission=None,
-        add_permission=None,
-        delete_permission=None
+        schema=None,
+        defaults=False,
+        permission=None,
+        internal=None,
+        **predicates
         ):
         self.model = model
-        self.view_permission = view_permission
-        self.edit_permission = edit_permission
-        self.add_permission = add_permission
-        self.delete_permission = delete_permission
+        self.schema = schema
+        self.defaults = defaults
+        self.permission = permission
+        self.internal = internal
+        self.predicates = predicates
 
     def actions(self, obj):
         views = []
-        for method, permission in [
-            ('HEAD', self.view_permission),
-            ('OPTIONS', self.view_permission)
-            ]:
-            views.append(
-                resource_composite_action(
-                    method,
-                    obj,
-                    self.model,
-                    permission
-                )
-            )
-        if issubclass(obj, Resource):
-            for method, klass, permission in [
-                ('GET', ViewableResource, self.view_permission),
-                ('POST', CollectionResource, self.add_permission),
-                ('PUT', EditableResource, self.edit_permission),
-                ('PATCH', EditableResource, self.edit_permission),
-                ('DELETE', DeletableResource, self.delete_permission)
-                ]:
-                smart = True if issubclass(obj, klass) else False
-                if (smart) or (not smart and hasattr(obj, method.lower())):
-                    views.append(
-                        resource_composite_action(
-                            method,
-                            obj,
-                            self.model,
-                            permission,
-                            smart=smart
-                        )
+
+        if 'request_method' not in self.predicates:
+            self.predicates['request_method'] = 'GET'
+
+        if self.defaults:
+            for method in ('HEAD', 'OPTIONS'):
+                predicates = self.predicates.copy()
+                predicates['request_method'] = method
+                views.append(
+                    resource_composite_action(
+                        obj,
+                        self.model,
+                        self.schema,
+                        self.permission,
+                        self.internal,
+                        **predicates
                     )
+                )
+        views.append(
+            resource_composite_action(
+                obj,
+                self.model,
+                self.schema,
+                self.permission,
+                self.internal,
+                **self.predicates
+            )
+        )
+
         return views
