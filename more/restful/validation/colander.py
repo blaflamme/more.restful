@@ -1,23 +1,15 @@
-import abc
 from webob.exc import HTTPBadRequest
 import colander
 
+from ..utils import remerge
 
-def validate(data, schema):
+
+def validate_schema(data, schema, obj=None, partial=False):
     inst = schema()
+    if partial:
+        data = remerge([obj, data])
     try:
         inst.deserialize(data)
     except colander.Invalid as e:
         raise HTTPBadRequest(e.msg)
-
-
-class ColanderSchemaValidation(abc.ABC):
-
-    @abc.abstractproperty
-    def schema(self):
-        raise NotImplemented()  # pragma: no cover
-
-    def validate(self, data, partial=False):
-        if partial:
-            data = self.complete_data(data)
-        validate(data, self.schema)
+    return (data, inst)
