@@ -1,13 +1,16 @@
+import colander
 from webtest import TestApp as Client
-
-from more.restful.abc import (
-    Resource,
-    ViewableResource,
-    CollectionResource,
-    EditableResource,
-    DeletableResource
-)
 from more.restful import RestfulApp
+
+
+class AccountSchema(colander.Schema):
+    email = colander.SchemaNode(
+        colander.String()
+    )
+    password = colander.SchemaNode(
+        colander.String(),
+        missing=colander.drop
+    )
 
 
 def test_default_resource_methods():
@@ -51,8 +54,7 @@ def test_resource_all_methods():
 
     @App.path(path='')
     class Model(object):
-        def __init__(self):
-            pass
+        pass
 
     with App.resource(model=Model) as resource:
 
@@ -74,7 +76,7 @@ def test_resource_all_methods():
 
         @resource(request_method='DELETE')
         def delete(self, request):
-            return {'foo': 'bar'}
+            return {}
 
     app = App()
     c = Client(app)
@@ -86,16 +88,16 @@ def test_resource_all_methods():
     response = c.get('/', status=200)
     assert response.json == {'foo': 'bar'}
 
-    response = c.post_json('/', {'foo': 'bar'}, status=201)
-    assert response.json == {'foo': 'bar'}
+    response = c.post_json('/', {'email': 'john@example.com', 'password': 'Jane'}, status=201)
+    assert response.json == {'email': 'john@example.com', 'password': 'Jane'}
     c.post_json('/', status=422)
 
-    response = c.put_json('/', {'foo': 'bar'}, status=200)
-    assert response.json == {'foo': 'bar'}
+    response = c.put_json('/', {'email': 'john@example.com', 'password': 'Jane'}, status=200)
+    assert response.json == {'email': 'john@example.com', 'password': 'Jane'}
     c.put_json('/', status=422)
 
-    response = c.patch_json('/', {'foo': 'bar'}, status=200)
-    assert response.json == {'foo': 'bar'}
+    response = c.patch_json('/', {'email': 'john@example.com', 'password': 'Jane'}, status=200)
+    assert response.json == {'email': 'john@example.com', 'password': 'Jane'}
     c.patch_json('/', status=422)
 
     response = c.delete('/', status=204)

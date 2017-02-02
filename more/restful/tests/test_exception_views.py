@@ -4,7 +4,6 @@ from webob.exc import (
     HTTPNotFound
 )
 
-from more.restful.abc import Resource
 from more.restful import RestfulApp
 
 
